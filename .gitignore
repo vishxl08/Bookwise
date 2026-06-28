@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+bookwise.db
+*.log
+__pycache__/
+.venv/
+.pytest_cache/
