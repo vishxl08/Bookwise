@@ -32,6 +32,11 @@ class Settings(BaseSettings):
         if self.database_url.startswith("postgres://"):
             self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
 
+        # Neon rejects non-SSL connections; make sure it's always requested.
+        if self.database_url.startswith("postgresql+psycopg://") and "sslmode=" not in self.database_url:
+            separator = "&" if "?" in self.database_url else "?"
+            self.database_url = f"{self.database_url}{separator}sslmode=require"
+
 
 @lru_cache
 def get_settings() -> Settings:

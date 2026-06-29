@@ -31,7 +31,10 @@ from .services.books import get_trending, search_books
 from .services.groq import ask_book, daily_pick, generate_insights, generate_quote, mood_recommendations, reading_personality
 
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as exc:
+    print(f"Could not create tables at startup: {exc}")
 
 
 def _migrate() -> None:
@@ -40,13 +43,16 @@ def _migrate() -> None:
         "ALTER TABLE library_items ADD COLUMN finished_at DATETIME",
         "ALTER TABLE library_items ADD COLUMN updated_at DATETIME",
     ]
-    with engine.connect() as conn:
-        for stmt in alters:
-            try:
-                conn.execute(text(stmt))
-                conn.commit()
-            except Exception:
-                pass
+    try:
+        with engine.connect() as conn:
+            for stmt in alters:
+                try:
+                    conn.execute(text(stmt))
+                    conn.commit()
+                except Exception:
+                    pass
+    except Exception as exc:
+        print(f"Could not run migrations at startup: {exc}")
 
 
 _migrate()
