@@ -17,12 +17,20 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env", extra="ignore")
 
     def model_post_init(self, __context) -> None:
-        # Vercel's native Storage > Postgres injects POSTGRES_URL (no DATABASE_URL),
-        # using the bare "postgres://" scheme. Rewrite it to the psycopg3 dialect
-        # explicitly so SQLAlchemy doesn't default to the (uninstalled) psycopg2.
-        vercel_postgres_url = os.getenv("POSTGRES_URL")
-        if vercel_postgres_url and self.database_url.startswith("sqlite"):
-            self.database_url = vercel_postgres_url.replace("postgres://", "postgresql+psycopg://", 1)
+        # Vercel's native Storage > Postgres injects both DATABASE_URL and
+        # POSTGRES_URL. If DATABASE_URL is set, pydantic-settings already loaded
+        # it into database_url directly -- fall back to POSTGRES_URL only if
+        # neither was provided (i.e. we're still on the local sqlite default).
+        if self.database_url.startswith("sqlite"):
+            vercel_postgres_url = os.getenv("POSTGRES_URL")
+            if vercel_postgres_url:
+                self.database_url = vercel_postgres_url
+
+        # Either way, Vercel/Neon use the bare "postgres://" scheme, which
+        # SQLAlchemy 2.0 rejects. Rewrite it to the psycopg3 dialect explicitly
+        # so SQLAlchemy doesn't default to the (uninstalled) psycopg2.
+        if self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
 
 
 @lru_cache
