@@ -236,7 +236,7 @@ Production starts with an **empty** database — local SQLite data (accounts, li
 | Search returns nothing | Open Library may be slow; add `GOOGLE_BOOKS_API_KEY` for fallback |
 | `ModuleNotFoundError: backend` | Run uvicorn from the **project root**, not inside `backend/` |
 | CORS errors | Frontend must use port `5173`; backend allows `127.0.0.1:5173` |
-| Vercel build fails: `pg_config executable not found` | No prebuilt wheel for the pinned Postgres driver on Vercel's Python version. Use `psycopg[binary]` in `requirements.txt`, not `psycopg2-binary` |
+| Vercel build fails: `pg_config executable not found`, or a `maturin`/`cargo`/PyO3 error building `pydantic-core` | Vercel defaulted to a newer Python than our dependencies have wheels for. Pinned via the root `.python-version` file (currently `3.12`) — don't delete it |
 
 ---
 
