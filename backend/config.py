@@ -18,10 +18,11 @@ class Settings(BaseSettings):
 
     def model_post_init(self, __context) -> None:
         # Vercel's native Storage > Postgres injects POSTGRES_URL (no DATABASE_URL),
-        # and uses the "postgres://" scheme which SQLAlchemy 2.0 no longer accepts.
+        # using the bare "postgres://" scheme. Rewrite it to the psycopg3 dialect
+        # explicitly so SQLAlchemy doesn't default to the (uninstalled) psycopg2.
         vercel_postgres_url = os.getenv("POSTGRES_URL")
         if vercel_postgres_url and self.database_url.startswith("sqlite"):
-            self.database_url = vercel_postgres_url.replace("postgres://", "postgresql://", 1)
+            self.database_url = vercel_postgres_url.replace("postgres://", "postgresql+psycopg://", 1)
 
 
 @lru_cache
