@@ -26,11 +26,13 @@ class Settings(BaseSettings):
             if vercel_postgres_url:
                 self.database_url = vercel_postgres_url
 
-        # Either way, Vercel/Neon use the bare "postgres://" scheme, which
-        # SQLAlchemy 2.0 rejects. Rewrite it to the psycopg3 dialect explicitly
-        # so SQLAlchemy doesn't default to the (uninstalled) psycopg2.
-        if self.database_url.startswith("postgres://"):
-            self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        # Neon URLs come back as "postgres://" or "postgresql://" depending on
+        # source, with no driver specified -- SQLAlchemy then defaults to the
+        # (uninstalled) psycopg2. Normalize to the psycopg3 dialect explicitly,
+        # regardless of which scheme spelling was given.
+        scheme, sep, rest = self.database_url.partition("://")
+        if scheme in ("postgres", "postgresql"):
+            self.database_url = f"postgresql+psycopg{sep}{rest}"
 
         # Neon rejects non-SSL connections; make sure it's always requested.
         if self.database_url.startswith("postgresql+psycopg://") and "sslmode=" not in self.database_url:
